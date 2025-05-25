@@ -1,0 +1,40 @@
+﻿@model QrConfirmModel
+@{
+    ViewData["Title"] = "Confirm Login";
+    Layout = "~/Views/Shared/_AccountLayout.cshtml";
+}
+
+<div class="account-container">
+    <div class="account-box text-center">
+        <h2>Confirm Login</h2>
+        <p>You're about to login as @User.Identity?.Name</p>
+
+        <form id="confirmForm">
+            <input type="hidden" asp-for="Token" />
+            <button type="button" onclick="confirmLogin()" class="btn btn-primary">
+                Confirm Login
+            </button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmLogin() {
+            fetch('/Account/ConfirmQrLogin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: JSON.stringify({
+                    token: '@Model.Token'
+                })
+            }).then(response => {
+                if (response.ok) {
+                    window.close(); // Close the confirmation window
+                }
+            });
+        }
+    </script>
+}

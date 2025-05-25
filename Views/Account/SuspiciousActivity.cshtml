@@ -1,0 +1,24 @@
+﻿@model List<UnauthorizedAccessAttempt>
+
+<h2>Recent Login Attempts</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Time (UTC)</th>
+            <th>IP Address</th>
+            <th>Device</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var attempt in Model)
+        {
+            <tr class="@(attempt.NotifiedUser ? "table-warning" : "")">
+                <td>@attempt.AttemptTime.ToString("g")</td>
+                <td>@attempt.IpAddress</td>
+                <td>@(attempt.UserAgent?.Length > 50 ? attempt.UserAgent.Substring(0, 50) + "..." : attempt.UserAgent)</td>
+                <td>@(attempt.NotifiedUser ? "Alert Sent" : "Attempt Recorded")</td>
+            </tr>
+        }
+    </tbody>
+</table>

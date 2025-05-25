@@ -1,0 +1,16 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using SmartHome.Models
+@inject SignInManager<Users> SignInManager
+@inject UserManager<Users> UserManager
+
+@if (SignInManager.IsSignedIn(User))
+{
+    <form asp-controller="Account" asp-action="Logout" method="post" class="form-inline">
+        <span class="navbar-text text-dark me-2">Hello, @User.Identity.Name!</span>
+        <button type="submit" class="btn btn-outline-dark">Logout</button>
+    </form>
+}
+else
+{
+    <a class="btn btn-outline-primary" asp-controller="Account" asp-action="Login">Login</a>
+}

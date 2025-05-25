@@ -1,0 +1,68 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+</div>
+
+<div class="light-control mb-4">
+    <h4>Light Control</h4>
+    <div class="btn-group">
+        <button id="lightOn" class="btn btn-success">Turn On</button>
+        <button id="lightOff" class="btn btn-danger">Turn Off</button>
+    </div>
+    <div class="mt-2">
+        Status: <span id="lightStatus" class="badge bg-secondary">@(ViewBag.LightStatus)</span>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            // Update status on page load
+            updateLightStatus();
+
+            // Button handlers
+            $("#lightOn").click(() => sendCommand(true));
+            $("#lightOff").click(() => sendCommand(false));
+        });
+
+        function updateLightStatus() {
+            $.get("/api/light/status", function (data) {
+                console.log("Current status:", data.isOn, "Last updated:", data.lastUpdated);
+
+                $("#lightStatus")
+                    .text(data.isOn ? "ON" : "OFF")
+                    .toggleClass("bg-success", data.isOn)
+                    .toggleClass("bg-danger", !data.isOn);
+            }).fail(handleApiError);
+        }
+
+        function sendCommand(turnOn) {
+            $.post("/api/light/toggle", { turnOn: turnOn })
+                .done(function (data) {
+                    console.log("Success! Status:", data.isOn,
+                        "Changed by:", data.user,
+                        "At:", data.timestamp);
+
+                    updateLightStatus(); // Refresh UI
+
+                    // Optional: Show toast notification
+                    toastr.success(`Light turned ${data.isOn ? 'ON' : 'OFF'}`);
+                })
+                .fail(handleApiError);
+        }
+
+        function handleApiError(xhr) {
+            console.error("API Error:", xhr.responseText);
+
+            if (xhr.status === 401) {
+                window.location.href = '/Account/Login';
+            } else {
+                toastr.error("Operation failed. Please try again.");
+            }
+        }
+    </script>
+}

@@ -1,0 +1,157 @@
+﻿@using SmartHome.ViewModels;
+@model LoginViewModel;
+
+
+   @{
+       ViewData["Title"] = "Login";
+    Layout = "~/Views/Shared/_AccountLayout.cshtml";
+}
+
+<div class="account-container">
+    <div class="account-box">
+        <h2 class="text-center mb-4">Login</h2>
+        <form asp-action="Login" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label"></label>
+                <input asp-for="Password" class="form-control" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+            <div class="float-end">
+                <a asp-controller="Account" asp-action="VerifyEmail" class="text-decoration-none">
+                    Forgot passsword?
+                </a>
+            </div>
+            <div class="form-check mb-3">
+                <label class="form-check-label"></label>
+                <input asp-for="RememberMe" class="form-check-input" />
+                @Html.DisplayNameFor(a => a.RememberMe)
+            </div>
+            <input type="submit" value="Login" class="btn btn-success w-100 p-2" />
+            <p class="text-center mt-2">
+                Don't have an account? <a asp-controller="Account" asp-action="Register" class="text-decoration-none">Register</a>
+
+
+            </p>
+            <div class="text-center">
+                <a asp-controller="Home" asp-action="Index" class="text-decoration-none mt-3">Back</a>
+
+
+            </div>
+
+
+            <div class="qr-login-section">
+                @if (!string.IsNullOrEmpty(ViewBag.QrCodeUrl))
+                {
+                    <h4>Login with QR Code</h4>
+                    <div class="qr-container">
+                        <img id="qrImage" src="@ViewBag.QrCodeUrl"
+                             alt="Scan to login"
+                             style="width: 200px; height: 200px;" />
+                        <div class="qr-overlay" id="qrOverlay">
+                            
+                        </div>
+                    </div>
+                    <div id="qrStatus"></div>
+                }
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        let token = '@ViewBag.QrToken';
+        let checkInterval;
+        let attempts = 0;
+        const maxAttempts = 20; // 1 minute timeout
+
+        function startPolling() {
+            checkInterval = setInterval(() => {
+                if (attempts++ >= maxAttempts) {
+                    clearInterval(checkInterval);
+                    showQrError("QR code expired. Please refresh the page.");
+                    return;
+                }
+
+                fetch(`/Account/CheckQrStatus?token=${token}`)
+                    .then(response => {
+                        if (!response.ok) throw new Error('Network error');
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.valid) {
+                            clearInterval(checkInterval);
+                            window.location.href = data.redirect || '/Home';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Polling error:', error);
+                    });
+            }, 3000);
+        }
+
+        function showQrError(message) {
+            document.getElementById('qrImage').src = data.newQrCode;
+            token = data.newToken;
+            attempts = 0;
+
+        }
+
+        // Start polling when page loads
+        document.addEventListener('DOMContentLoaded', startPolling);
+
+        // Refresh QR code every 90 seconds
+        setInterval(() => {
+            fetch('/Account/Login/RefreshQr')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.newQrCode) {
+                        document.getElementById('qrImage').src = data.newQrCode;
+                        attempts = 0; // Reset attempt counter
+                    }
+                });
+        }, 90000);
+    </script>
+
+    <style>
+        .qr-container {
+            position: relative;
+            margin: 0 auto;
+            width: 200px;
+        }
+
+        .qr-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            display: none;
+        }
+
+        .qr-instructions {
+            text-align: center;
+            margin-top: 10px;
+            color: #666;
+        }
+    </style>
+}
+}
+
+
+}
