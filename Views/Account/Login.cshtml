@@ -74,7 +74,7 @@
         let token = '@ViewBag.QrToken';
         let checkInterval;
         let attempts = 0;
-        const maxAttempts = 20; // 1 minute timeout
+        const maxAttempts = 20; 
 
         function startPolling() {
             checkInterval = setInterval(() => {
@@ -108,17 +108,17 @@
 
         }
 
-        // Start polling when page loads
+        
         document.addEventListener('DOMContentLoaded', startPolling);
 
-        // Refresh QR code every 90 seconds
+        
         setInterval(() => {
             fetch('/Account/Login/RefreshQr')
                 .then(response => response.json())
                 .then(data => {
                     if (data.newQrCode) {
                         document.getElementById('qrImage').src = data.newQrCode;
-                        attempts = 0; // Reset attempt counter
+                        attempts = 0; 
                     }
                 });
         }, 90000);

@@ -40,7 +40,7 @@ public class QrLoginService
     private string GenerateQrContent(string token)
     {
         var request = _httpContextAccessor.HttpContext?.Request;
-        return $" https://e82e-92-80-206-34.ngrok-free.app ";
+        return $"https://d201-92-80-206-34.ngrok-free.app ";
     }
 
     private string GenerateQrImage(string content)
@@ -84,7 +84,7 @@ public class QrLoginService
     }
 }
 
-// Add this to your project (in QrLoginService.cs or separate file)
+
 public class QrLoginState
 {
     public string Email { get; set; }

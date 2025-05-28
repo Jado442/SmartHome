@@ -5,10 +5,9 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace SmartHome.Migrations
 {
-    /// <inheritdoc />
     public partial class AddUnauthorizedAccessAttempts : Migration
     {
-        /// <inheritdoc />
+        
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
@@ -30,7 +29,7 @@ namespace SmartHome.Migrations
                 });
         }
 
-        /// <inheritdoc />
+        
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(

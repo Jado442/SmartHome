@@ -1,4 +1,4 @@
-﻿// Models/UnauthorizedAccessAttempt.cs
+﻿
 public class UnauthorizedAccessAttempt
 {
     public int Id { get; set; }

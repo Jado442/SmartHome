@@ -52,7 +52,7 @@ namespace SmartHome.Controllers
             ViewBag.QrCodeUrl = qrImage;
             ViewBag.QrToken = qrToken;
 
-            // Setup polling
+            
             HttpContext.Response.Headers.Add("Polling-Interval", "3000");
 
             return View();
@@ -141,7 +141,7 @@ namespace SmartHome.Controllers
                         return View(model);
                     }
 
-                    // Proceed with 2FA
+                    
                     var token = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
                     HttpContext.Session.SetString("2FA-Email", model.Email);
                     HttpContext.Session.SetString("2FA-RememberMe", model.RememberMe.ToString());
@@ -257,7 +257,11 @@ namespace SmartHome.Controllers
 
                 if (user != null)
                 {
-                    return RedirectToAction("ChangePassword", new { username = user.UserName });
+                    // Generate password reset token
+                    var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+                    // Redirect to ResetPassword
+                    return RedirectToAction("ResetPassword", new { email = user.Email, token = token });
                 }
 
                 ModelState.AddModelError("", "Invalid email.");
@@ -266,31 +270,63 @@ namespace SmartHome.Controllers
         }
 
         [Authorize]
+        public async Task<IActionResult> ChangePassword()
         {
-        }
-
-            return View(new ChangePasswordViewModel { Email = username });
+            var user = await _userManager.GetUserAsync(User);
+            return View(new ChangePasswordViewModel { Email = user.Email });
         }
 
         [HttpPost]
+        [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        [Authorize]
-        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
         {
             {
             }
 
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
             {
+                return NotFound($"Unable to load user.");
             }
+
+            // Verify current password
+            var changePasswordResult = await _userManager.ChangePasswordAsync(
+                user,
+                model.CurrentPassword,
+                model.NewPassword);
+
+            if (!changePasswordResult.Succeeded)
             {
+                foreach (var error in changePasswordResult.Errors)
                 {
+                    ModelState.AddModelError(string.Empty, error.Description);
                 }
                 return View(model);
             }
 
-            // Password changed successfully
-            return RedirectToAction("ChangePasswordConfirmation");
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult ResetPasswordConfirmation()
+        {
+            return View();
         }
+
+        [Authorize]
+        public async Task<IActionResult> ChangePassword()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            return View(new ChangePasswordViewModel { Email = user.Email });
+        }
+
+        [HttpGet]
+        [Authorize]
+        public IActionResult ChangePasswordConfirmation()
+        {
+            return View();
+        }
+
+
 
         [Authorize]
         public async Task<IActionResult> Logout()

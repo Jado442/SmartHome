@@ -1,4 +1,4 @@
-﻿// Services/UnauthorizedAccessAlertService.cs
+﻿
 using SmartHome.Data;
 
 public class UnauthorizedAccessAlertService
