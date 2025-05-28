@@ -9,7 +9,7 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using SmartHome.Data;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging; // Add if missing
+using Microsoft.Extensions.Logging; 
 
 namespace SmartHome.Controllers
 {
@@ -83,8 +83,6 @@ namespace SmartHome.Controllers
 
         [HttpPost]
         [Authorize]
-        [ValidateAntiForgeryToken]  // Fixed "ValidateAntiPropertyToken" to "ValidateAntiForgeryToken"
-        public async Task<IActionResult> ConfirmQrLogin([FromBody] QrConfirmModel model)  // Fixed "Qpt.ogin" to "QrLogin"
         {
             if (ModelState.IsValid &&
                  _qrLoginService.CompleteAuthentication(model.Token, User.Identity.Name))
@@ -268,12 +266,8 @@ namespace SmartHome.Controllers
         }
 
         [Authorize]
-        public IActionResult ChangePassword(string username)
         {
-            if (string.IsNullOrEmpty(username))
-            {
-                return RedirectToAction("VerifyEmail");
-            }
+        }
 
             return View(new ChangePasswordViewModel { Email = username });
         }
@@ -283,42 +277,19 @@ namespace SmartHome.Controllers
         [Authorize]
         public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
         {
-            if (ModelState.IsValid)
             {
-                var user = await _userManager.FindByNameAsync(model.Email);
-
-                if (user != null)
-                {
-                    var removeResult = await _userManager.RemovePasswordAsync(user);
-
-                    if (removeResult.Succeeded)
-                    {
-                        var addResult = await _userManager.AddPasswordAsync(user, model.NewPassword);
-
-                        if (addResult.Succeeded)
-                        {
-                            return RedirectToAction("Login");
-                        }
-
-                        foreach (var error in addResult.Errors)
-                        {
-                            ModelState.AddModelError("", error.Description);
-                        }
-                    }
-                    else
-                    {
-                        foreach (var error in removeResult.Errors)
-                        {
-                            ModelState.AddModelError("", error.Description);
-                        }
-                    }
-                }
-                else
-                {
-                    ModelState.AddModelError("", "Email not found.");
-                }
             }
-            return View(model);
+
+            {
+            }
+            {
+                {
+                }
+                return View(model);
+            }
+
+            // Password changed successfully
+            return RedirectToAction("ChangePasswordConfirmation");
         }
 
         [Authorize]
