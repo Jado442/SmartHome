@@ -9,7 +9,7 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using SmartHome.Data;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging; 
+using Microsoft.Extensions.Logging; // Add if missing
 
 namespace SmartHome.Controllers
 {
@@ -52,7 +52,7 @@ namespace SmartHome.Controllers
             ViewBag.QrCodeUrl = qrImage;
             ViewBag.QrToken = qrToken;
 
-            
+            // Setup polling
             HttpContext.Response.Headers.Add("Polling-Interval", "3000");
 
             return View();
@@ -83,6 +83,8 @@ namespace SmartHome.Controllers
 
         [HttpPost]
         [Authorize]
+        [ValidateAntiForgeryToken]  // Fixed "ValidateAntiPropertyToken" to "ValidateAntiForgeryToken"
+        public async Task<IActionResult> ConfirmQrLogin([FromBody] QrConfirmModel model)  // Fixed "Qpt.ogin" to "QrLogin"
         {
             if (ModelState.IsValid &&
                  _qrLoginService.CompleteAuthentication(model.Token, User.Identity.Name))
@@ -141,7 +143,7 @@ namespace SmartHome.Controllers
                         return View(model);
                     }
 
-                    
+                    // Proceed with 2FA
                     var token = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
                     HttpContext.Session.SetString("2FA-Email", model.Email);
                     HttpContext.Session.SetString("2FA-RememberMe", model.RememberMe.ToString());
@@ -160,7 +162,7 @@ namespace SmartHome.Controllers
             return View(model);
         }
 
-       
+
 
         [HttpGet]
         public IActionResult LoginWith2fa()
@@ -269,11 +271,16 @@ namespace SmartHome.Controllers
             return View(model);
         }
 
-        [Authorize]
-        public async Task<IActionResult> ChangePassword()
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult ResetPassword(string email, string token)
         {
-            var user = await _userManager.GetUserAsync(User);
-            return View(new ChangePasswordViewModel { Email = user.Email });
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login");
+            }
+
+            return View(new ResetPasswordViewModel { Email = email, Token = token });
         }
 
         [HttpPost]
@@ -281,29 +288,30 @@ namespace SmartHome.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
         {
+            if (!ModelState.IsValid)
             {
-            }
-
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return NotFound($"Unable to load user.");
-            }
-
-            // Verify current password
-            var changePasswordResult = await _userManager.ChangePasswordAsync(
-                user,
-                model.CurrentPassword,
-                model.NewPassword);
-
-            if (!changePasswordResult.Succeeded)
-            {
-                foreach (var error in changePasswordResult.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
                 return View(model);
             }
+
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
+            {
+                // Don't reveal that the user does not exist
+                return RedirectToAction("ResetPasswordConfirmation");
+            }
+
+            var result = await _userManager.ResetPasswordAsync(user, model.Token, model.NewPassword);
+            if (result.Succeeded)
+            {
+                return RedirectToAction("ResetPasswordConfirmation");
+            }
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+            return View(model);
+        }
 
         [HttpGet]
         [AllowAnonymous]
@@ -312,6 +320,7 @@ namespace SmartHome.Controllers
             return View();
         }
 
+
         [Authorize]
         public async Task<IActionResult> ChangePassword()
         {
@@ -319,14 +328,57 @@ namespace SmartHome.Controllers
             return View(new ChangePasswordViewModel { Email = user.Email });
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _userManager.FindByNameAsync(model.Email);
+
+                if (user != null)
+                {
+                    var removeResult = await _userManager.RemovePasswordAsync(user);
+
+                    if (removeResult.Succeeded)
+                    {
+                        var addResult = await _userManager.AddPasswordAsync(user, model.NewPassword);
+
+                        if (addResult.Succeeded)
+                        {
+                            return RedirectToAction("Login");
+                        }
+
+                        foreach (var error in addResult.Errors)
+                        {
+                            ModelState.AddModelError("", error.Description);
+                        }
+                    }
+                    else
+                    {
+                        foreach (var error in removeResult.Errors)
+                        {
+                            ModelState.AddModelError("", error.Description);
+                        }
+                    }
+                }
+                else
+                {
+                    ModelState.AddModelError("", "Email not found.");
+                }
+            }
+            return View(model);
+        }
+
+
+
         [HttpGet]
         [Authorize]
         public IActionResult ChangePasswordConfirmation()
         {
             return View();
         }
-
-
 
         [Authorize]
         public async Task<IActionResult> Logout()
@@ -381,10 +433,6 @@ namespace SmartHome.Controllers
         }
 
 
-        
-        }
+
     }
-
-
-
-
+}
