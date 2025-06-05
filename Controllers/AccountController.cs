@@ -9,7 +9,7 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using SmartHome.Data;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging; // Add if missing
+using Microsoft.Extensions.Logging; 
 
 namespace SmartHome.Controllers
 {
